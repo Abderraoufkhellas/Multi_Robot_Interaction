@@ -4,16 +4,18 @@ from src.simulator.obstacle import CircularObstacle
 from src.simulator.visualizer import Visualizer
 from src.planners.go_to_goal import GoToGoalPlanner
 import matplotlib.pyplot as plt
+from src.utils.logger import MetricsLogger
+
 
 def main():
-    world = World(dt=0.02)
+    world = World(dt=0.04)
 
     # Place an obstacle directly in the center
     world.add_obstacle(CircularObstacle(x=-2.0, y=0.0, radius=0.5))
 
     # Spawn two robots on opposite sides
     robot1 = DifferentialRobot(robot_id=1, start_x=-2.0, start_y=-2.0, start_theta=0.0, radius=0.14)
-    robot2 = DifferentialRobot(robot_id=2, start_x=2.0, start_y=2.0, start_theta=3.14, radius=0.14)
+    robot2 = DifferentialRobot(robot_id=2, start_x=2.0, start_y=2.0, start_theta=3.14/2, radius=0.14)
 
     world.add_robot(robot1)
     world.add_robot(robot2)
@@ -26,10 +28,10 @@ def main():
     target2 = (-2.0, -2.0)
 
     visualizer = Visualizer(world, bounds=3.0)
-
+    logger = MetricsLogger()
     print("Starting simulation...")
     
-    while world.time < 20.0:
+    while world.time < 10.0:
         commands = {}
         
         # Sense & Plan for Robot 1
@@ -42,10 +44,15 @@ def main():
 
         # Act
         world.step(commands)
-        
+
+
         # Draw the world and the goals
         targets = {1: target1, 2: target2}
+        logger.log_step(world, targets)
+
         visualizer.render(targets=targets)
+
+    logger.export_to_csv("logs/test_run_01.csv")
 
     plt.ioff()
     plt.show()
