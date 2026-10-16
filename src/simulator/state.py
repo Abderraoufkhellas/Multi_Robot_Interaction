@@ -3,7 +3,6 @@ from dataclasses import dataclass
 @dataclass
 class Twist:
     """ROS 2 Twist equivalent (cmd_vel).
-    We only need linear X and angular Z for 2D unicycle robots.
     """
     linear_x: float = 0.0
     angular_z: float = 0.0
