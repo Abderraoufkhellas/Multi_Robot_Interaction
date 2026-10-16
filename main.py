@@ -1,53 +1,52 @@
 from src.simulator.world import World
 from src.simulator.robot import DifferentialRobot
+from src.simulator.obstacle import CircularObstacle
 from src.simulator.visualizer import Visualizer
-from src.simulator.state import Twist
+from src.planners.go_to_goal import GoToGoalPlanner
 import matplotlib.pyplot as plt
 
 def main():
-    # Initialize the simulation environment (10 Hz clock)
-    world = World(dt=0.01)
+    world = World(dt=0.02)
 
-    # Spawn two robots 
-    robot1 = DifferentialRobot(robot_id=1, start_x=-2.0, start_y=1.0, start_theta=0.0, radius=0.14)
-    robot2 = DifferentialRobot(robot_id=2, start_x=0.0, start_y=-2.0, start_theta=1.57, radius=0.14)
+    # Place an obstacle directly in the center
+    world.add_obstacle(CircularObstacle(x=-2.0, y=0.0, radius=0.5))
+
+    # Spawn two robots on opposite sides
+    robot1 = DifferentialRobot(robot_id=1, start_x=-2.0, start_y=-2.0, start_theta=0.0, radius=0.14)
+    robot2 = DifferentialRobot(robot_id=2, start_x=2.0, start_y=2.0, start_theta=3.14, radius=0.14)
 
     world.add_robot(robot1)
     world.add_robot(robot2)
 
-    #  Initialize the visualizer
-    visualizer = Visualizer(world, bounds=4.0)
+    # Initialize the brains (Planners) and give them their targets
+    planner1 = GoToGoalPlanner(robot_id=1)
+    target1 = (2.0, 2.0) # Drive diagonally across the center
+
+    planner2 = GoToGoalPlanner(robot_id=2)
+    target2 = (-2.0, -2.0)
+
+    visualizer = Visualizer(world, bounds=3.0)
 
     print("Starting simulation...")
     
-    #The Master Execution Loop (for 15  seconds)
-    while world.time < 15.0:
+    while world.time < 20.0:
+        commands = {}
         
-        # Dummy Planners: Hardcode commands to see them move
-        # Robot 1 will drive in a continuous circle
-        cmd_r1 = Twist(linear_x=0.5, angular_z=0.4)
-        
-        # Robot 2 will drive straight, then brake at 7.5 seconds
-        if world.time < 7.5:
-            cmd_r2 = Twist(linear_x=0.8, angular_z=0.0)
-        else:
-            cmd_r2 = Twist(linear_x=0.0, angular_z=0.0)
+        # Sense & Plan for Robot 1
+        dyn_neighbors1, stat_points1 = world.get_lidar_scan(1)
+        commands[1] = planner1.compute_velocity(robot1.state, target1[0], target1[1], dyn_neighbors1, stat_points1)
 
-        # B. Bundle commands into the dictionary World expects
-        commands = {
-            1: cmd_r1,
-            2: cmd_r2
-        }
+        # Sense & Plan for Robot 2
+        dyn_neighbors2, stat_points2 = world.get_lidar_scan(2)
+        commands[2] = planner2.compute_velocity(robot2.state, target2[0], target2[1], dyn_neighbors2, stat_points2)
 
-        # Advance physics by 1 tick
+        # Act
         world.step(commands)
         
-        # D. Redraw the screen
-        visualizer.render()
+        # Draw the world and the goals
+        targets = {1: target1, 2: target2}
+        visualizer.render(targets=targets)
 
-    print("Simulation finished.")
-    
-    # 5. Keep the final plot open so it doesn't instantly close when done
     plt.ioff()
     plt.show()
 

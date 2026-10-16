@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from src.simulator.state import Twist, Odometry
+from typing import List, Tuple
+from src.simulator.state import Odometry, Twist
 
 class BasePlanner(ABC):
     """
@@ -11,10 +12,13 @@ class BasePlanner(ABC):
         self.robot_id = robot_id
 
     @abstractmethod
-    def compute_velocity(self, current_state: Odometry, target_x: float, target_y: float) -> Twist:
+    def compute_velocity(self, 
+                         current_state: Odometry, 
+                         target_x: float, 
+                         target_y: float, 
+                         dynamic_neighbors: List[Odometry], 
+                         static_points: List[Tuple[float, float]]) -> Twist:
         """
-        Calculates the required velocity command to move the robot toward its goal.
-        
-        
+        Calculates the next velocity command based on state, goal, and sensor data.
         """
         pass
