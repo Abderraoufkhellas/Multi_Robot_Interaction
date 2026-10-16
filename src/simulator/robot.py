@@ -46,11 +46,11 @@ class DifferentialRobot(Robot):
         v_right = max(-self.max_wheel_speed, min(self.max_wheel_speed, v_right))
         v_left = max(-self.max_wheel_speed, min(self.max_wheel_speed, v_left))
         
-        # Forward Kinematics
+        # Actual speeds
         actual_v = (v_right + v_left) / 2.0
         actual_w = (v_right - v_left) / self.track_width
         
-        # Euler Integration
+        #Integration
         self.state.x += actual_v * math.cos(self.state.theta) * dt
         self.state.y += actual_v * math.sin(self.state.theta) * dt
         self.state.theta += actual_w * dt
