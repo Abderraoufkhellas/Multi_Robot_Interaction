@@ -1,0 +1,27 @@
+{
+    "simulation": {
+        "dt": 0.04,
+        "max_time": 10.0
+    },
+    "obstacles": [
+        {"x": -2.0, "y": 0.0, "radius": 0.5}
+    ],
+    "robots": [
+        {
+            "id": 1, 
+            "type": "DifferentialRobot",
+            "planner": "GoToGoalPlanner",
+            "radius": 0.14,
+            "start": {"x": -2.0, "y": -2.0, "theta": 0.0},
+            "target": {"x": 2.0, "y": 2.0}
+        },
+        {
+            "id": 2, 
+            "type": "DifferentialRobot",
+            "planner": "GoToGoalPlanner",
+            "radius": 0.14,
+            "start": {"x": 2.0, "y": 2.0, "theta": 3.14159},
+            "target": {"x": -2.0, "y": -2.0}
+        }
+    ]
+}
