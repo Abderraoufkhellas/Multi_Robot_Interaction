@@ -1,27 +1,29 @@
 {
     "simulation": {
         "dt": 0.04,
-        "max_time": 10.0
+        "max_time": 20.0
     },
-    "obstacles": [
-        {"x": -2.0, "y": 0.0, "radius": 0.5}
-    ],
+    "obstacles": [],
     "robots": [
         {
-            "id": 1, 
+            "id": 1,
             "type": "DifferentialRobot",
-            "planner": "GoToGoalPlanner",
-            "radius": 0.14,
-            "start": {"x": -2.0, "y": -2.0, "theta": 0.0},
-            "target": {"x": 2.0, "y": 2.0}
+            "navigation": {
+                "global": "GoToGoalPlanner",
+                "local": "OrcaPlanner"
+            },
+            "start": {"x": -2.0, "y": 0, "theta": 0},
+            "target": {"x": 1.0, "y": 0}
         },
         {
-            "id": 2, 
+            "id": 2,
             "type": "DifferentialRobot",
-            "planner": "GoToGoalPlanner",
-            "radius": 0.14,
-            "start": {"x": 2.0, "y": 2.0, "theta": 3.14159},
-            "target": {"x": -2.0, "y": -2.0}
+            "navigation": {
+                "global": "GoToGoalPlanner",
+                "local": "OrcaPlanner"
+            },
+            "start": {"x": 2.0, "y": 0, "theta": 3.14},
+            "target": {"x": -1.0, "y": 0}
         }
     ]
 }

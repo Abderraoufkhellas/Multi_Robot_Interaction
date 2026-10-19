@@ -1,60 +1,58 @@
 import math
 from abc import ABC, abstractmethod
-from .state import Twist, Odometry
+from src.simulator.state import Odometry, Twist
 
 class Robot(ABC):
-    """
-    Abstract base class representing a generic robot.
-    Holds common properties shared by all robot types (ID, state, physical radius).
-    """
-    def __init__(self, robot_id: int, start_x: float, start_y: float, start_theta: float, radius: float = 0.15):
+    def __init__(self, robot_id: int, radius: float):
         self.id = robot_id
-        self.state = Odometry(x=start_x, y=start_y, theta=start_theta)
+        self.radius = radius
+        self.state = None  # To be initialized by subclass
         
-        # Used later for collision detection (e.g., ORCA safety bounds)
-        self.radius = radius 
+        # Internal navigation stack
+        self.global_planner = None
+        self.local_planner = None
+        self.cmd = Twist(0.0, 0.0)
+
+    def set_planners(self, global_planner, local_planner):
+        """Attaches the navigation algorithms to the robot's brain."""
+        self.global_planner = global_planner
+        self.local_planner = local_planner
 
     @abstractmethod
-    def step(self, cmd: Twist, dt: float):
-        """
-        Advances the robot's physical position.
-        Every specific robot hardware type MUST implement its own kinematics here.
-        """
+    def plan(self, target_x: float, target_y: float, dynamic_neighbors: list, static_points: list):
+        """Executes the navigation stack to calculate the next motor command."""
         pass
 
-class DifferentialRobot(Robot):
-    """
-    Concrete implementation of a two-wheeled differential drive robot.
-    """
-    def __init__(self, robot_id: int, start_x: float, start_y: float, start_theta: float, 
-                 radius: float = 0.15, track_width: float = 0.3, max_wheel_speed: float = 1.0):
-        
-        # 1. Call the parent constructor to initialize id, state, and radius
-        super().__init__(robot_id, start_x, start_y, start_theta, radius)
-        
-        # 2. Add properties specific to differential drive hardware
-        self.track_width = track_width
-        self.max_wheel_speed = max_wheel_speed
+    @abstractmethod
+    def step(self, dt: float):
+        """Applies the computed motor command to the physical kinematic model."""
+        pass
 
-    # 3. Override the abstract step method with specific differential kinematics
-    def step(self, cmd: Twist, dt: float):
-        # Inverse Kinematics
-        v_right = cmd.linear_x + (cmd.angular_z * self.track_width / 2.0)
-        v_left = cmd.linear_x - (cmd.angular_z * self.track_width / 2.0)
+
+class DifferentialRobot(Robot):
+    def __init__(self, robot_id: int, start_x: float, start_y: float, start_theta: float, radius: float = 0.14):
+        super().__init__(robot_id, radius)
+        self.state = Odometry(start_x, start_y, start_theta, 0.0, 0.0)
+
+    def plan(self, target_x: float, target_y: float, dynamic_neighbors: list, static_points: list):
+        if not self.global_planner or not self.local_planner:
+            return
+
+        # 1. Global Planner calculates intent
+        pref_vx, pref_vy = self.global_planner.compute_preferred_velocity(
+            self.state, target_x, target_y
+        )
         
-        # Hardware Constraints
-        v_right = max(-self.max_wheel_speed, min(self.max_wheel_speed, v_right))
-        v_left = max(-self.max_wheel_speed, min(self.max_wheel_speed, v_left))
+        # 2. Local Planner calculates safety
+        self.cmd = self.local_planner.compute_safe_velocity(
+            self.state, pref_vx, pref_vy, dynamic_neighbors, static_points
+        )
+
+    def step(self, dt: float):
+        # Kinematic update for a differential drive robot
+        self.state.x += self.cmd.linear_x * math.cos(self.state.theta) * dt
+        self.state.y += self.cmd.linear_x * math.sin(self.state.theta) * dt
+        self.state.theta += self.cmd.angular_z * dt
         
-        # Actual speeds
-        actual_v = (v_right + v_left) / 2.0
-        actual_w = (v_right - v_left) / self.track_width
-        
-        #Integration
-        self.state.x += actual_v * math.cos(self.state.theta) * dt
-        self.state.y += actual_v * math.sin(self.state.theta) * dt
-        self.state.theta += actual_w * dt
-        
-        # Update state telemetry
-        self.state.v = actual_v
-        self.state.w = actual_w
+        self.state.linear_x = self.cmd.linear_x
+        self.state.angular_z = self.cmd.angular_z

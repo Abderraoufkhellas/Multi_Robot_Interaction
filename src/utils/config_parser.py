@@ -4,17 +4,15 @@ from src.simulator.world import World
 from src.simulator.robot import DifferentialRobot
 from src.simulator.obstacle import CircularObstacle
 from src.planners.go_to_goal import GoToGoalPlanner
+from src.planners.orca_planner import OrcaPlanner
 
-# Explicit registries: Easy to read, easy for your IDE to track
-ROBOT_CLASSES = {
-    "DifferentialRobot": DifferentialRobot
-}
-
+ROBOT_CLASSES = {"DifferentialRobot": DifferentialRobot}
 PLANNER_CLASSES = {
-    "GoToGoalPlanner": GoToGoalPlanner
+    "GoToGoalPlanner": GoToGoalPlanner,
+    "OrcaPlanner": OrcaPlanner
 }
 
-def setup_simulation(filepath: str) -> Tuple[World, Dict[int, Tuple[float, float]], Dict[int, Any], dict]:
+def setup_simulation(filepath: str) -> Tuple[World, Dict[int, Tuple[float, float]], dict]:
     with open(filepath, 'r') as f:
         data = json.load(f)
         
@@ -25,11 +23,11 @@ def setup_simulation(filepath: str) -> Tuple[World, Dict[int, Tuple[float, float
         world.add_obstacle(CircularObstacle(x=obs['x'], y=obs['y'], radius=obs['radius']))
         
     targets = {}
-    planners = {}
     
     for r_data in data.get('robots', []):
         r_id = r_data['id']
         
+        # 1. Instantiate the physical robot
         robot_class = ROBOT_CLASSES[r_data.get('type', 'DifferentialRobot')]
         robot = robot_class(
             robot_id=r_id,
@@ -38,11 +36,19 @@ def setup_simulation(filepath: str) -> Tuple[World, Dict[int, Tuple[float, float
             start_theta=r_data['start']['theta'],
             radius=r_data.get('radius', 0.14)
         )
+        
+        # 2. Instantiate the navigation stack
+        nav_config = r_data.get('navigation', {})
+        global_class = PLANNER_CLASSES[nav_config.get('global', 'GoToGoalPlanner')]
+        local_class = PLANNER_CLASSES[nav_config.get('local', 'OrcaPlanner')]
+        
+        # 3. Mount the stack onto the robot
+        robot.set_planners(
+            global_planner=global_class(robot_id=r_id),
+            local_planner=local_class(robot_id=r_id, dt=sim_config["dt"])
+        )
+        
         world.add_robot(robot)
-        
-        planner_class = PLANNER_CLASSES[r_data.get('planner', 'GoToGoalPlanner')]
-        planners[r_id] = planner_class(robot_id=r_id)
-        
         targets[r_id] = (r_data['target']['x'], r_data['target']['y'])
         
-    return world, targets, planners, sim_config
+    return world, targets, sim_config
