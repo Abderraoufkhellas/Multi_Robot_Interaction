@@ -48,9 +48,7 @@ class GoToGoalPlanner(BasePlanner):
         # 5. Cap at physical speed limits
         angular_vel = max(min(angular_vel, self.max_angular), -self.max_angular)
         
-        # Slow down linear velocity if we have to make a sharp turn
-        if abs(heading_error) > 0.5: 
-            linear_vel *= 0.1 
+        
             
         linear_vel = max(min(linear_vel, self.max_linear), -self.max_linear)
 
