@@ -1,4 +1,5 @@
-numpy
-matplotlib
-pyyaml
-pandas
+numpy>=1.24.0
+matplotlib>=3.7.0
+Cython>=3.0.0
+# Compiled C++ RVO2 wrapper (requires cmake, build-essential, and python3-dev)
+Python-RVO2 @ git+https://github.com/sybrenstuvel/Python-RVO2.git
