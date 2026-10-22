@@ -3,7 +3,14 @@
         "dt": 0.04,
         "max_time": 20.0
     },
-    "obstacles": [],
+    "obstacles": [
+        {
+            "x": 0,
+            "y": 0,
+            "radius": 0.3
+        }
+        
+    ],
     "robots": [
         {
             "id": 1,
@@ -13,7 +20,7 @@
                 "local": "OrcaPlanner"
             },
             "start": {"x": -2.0, "y": 0, "theta": 0},
-            "target": {"x": 1.0, "y": 0}
+            "target": {"x": 1.0, "y": -0.5}
         },
         {
             "id": 2,
@@ -23,7 +30,9 @@
                 "local": "OrcaPlanner"
             },
             "start": {"x": 2.0, "y": 0, "theta": 3.14},
-            "target": {"x": -1.0, "y": 0}
+            "target": {"x": -1.0, "y": -0.5}
         }
+        
+        
     ]
 }

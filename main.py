@@ -8,7 +8,7 @@ def main():
     scenario_file = "configs/scenario_01_cross.json"
     world, targets, sim_config = setup_simulation(scenario_file)
 
-    visualizer = Visualizer(world, bounds=3.0)
+    visualizer = Visualizer(world, bounds=2.0)
     logger = MetricsLogger()
 
     print(f"Starting simulation loaded from {scenario_file}...")

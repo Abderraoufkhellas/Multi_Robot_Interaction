@@ -7,19 +7,19 @@ class OrcaPlanner(BasePlanner):
     def __init__(self, robot_id: int, dt: float = 0.1):
         super().__init__(robot_id)
         self.dt = dt
-        self.max_speed = 0.5
+        self.max_speed = 1
         self.radius = 0.14
-        self.k_w = 2.0 
+        self.k_w = 3.0 
 
     def compute_safe_velocity(self, current_state: Odometry, pref_vx: float, pref_vy: float, 
                               dynamic_neighbors: list, static_points: list) -> Twist:
         
-        sim = rvo2.PyRVOSimulator(self.dt, 3.0, 10, 2.0, 2.0, self.radius, self.max_speed)
+        sim = rvo2.PyRVOSimulator(self.dt, 5.0, 10, 4.0, 4.0, self.radius*1.5, self.max_speed)
 
         # 1. Add Self
         sim.addAgent(
             (current_state.x, current_state.y),
-            neighborDist=3.0, maxNeighbors=10, timeHorizon=2.0, timeHorizonObst=2.0,
+            neighborDist=4.0, maxNeighbors=10, timeHorizon=3.0, timeHorizonObst=2.0,
             radius=self.radius, maxSpeed=self.max_speed,
             velocity=(current_state.v * math.cos(current_state.theta), 
                       current_state.v * math.sin(current_state.theta))
@@ -29,7 +29,7 @@ class OrcaPlanner(BasePlanner):
         for neighbor in dynamic_neighbors:
             sim.addAgent(
                 (neighbor.x, neighbor.y),
-                neighborDist=3.0, maxNeighbors=10, timeHorizon=2.0, timeHorizonObst=2.0,
+                neighborDist=4.0, maxNeighbors=10, timeHorizon=3.0, timeHorizonObst=2.0,
                 radius=self.radius, maxSpeed=self.max_speed,
                 velocity=(neighbor.v * math.cos(neighbor.theta), 
                           neighbor.v * math.sin(neighbor.theta))
