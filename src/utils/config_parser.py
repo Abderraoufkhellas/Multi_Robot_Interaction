@@ -5,11 +5,15 @@ from src.simulator.robot import DifferentialRobot
 from src.simulator.obstacle import CircularObstacle
 from src.planners.go_to_goal import GoToGoalPlanner
 from src.planners.orca_planner import OrcaPlanner
+from src.planners.mpc_planner import MpcPlanner
 
 ROBOT_CLASSES = {"DifferentialRobot": DifferentialRobot}
+
+# --- ADDED MPC TO THE DICTIONARY ---
 PLANNER_CLASSES = {
     "GoToGoalPlanner": GoToGoalPlanner,
-    "OrcaPlanner": OrcaPlanner
+    "OrcaPlanner": OrcaPlanner,
+    "MpcPlanner": MpcPlanner  
 }
 
 def setup_simulation(filepath: str) -> Tuple[World, Dict[int, Tuple[float, float]], dict]:
@@ -34,7 +38,7 @@ def setup_simulation(filepath: str) -> Tuple[World, Dict[int, Tuple[float, float
             start_x=r_data['start']['x'],
             start_y=r_data['start']['y'],
             start_theta=r_data['start']['theta'],
-            radius=r_data.get('radius', 0.14)
+            radius=r_data.get('radius', 0.17) # Updated default to Turtlebot 4 radius
         )
         
         # 2. Instantiate the navigation stack

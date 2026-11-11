@@ -50,8 +50,9 @@ class DifferentialRobot(Robot):
         )
         
         self.cmd = self.local_planner.compute_safe_velocity(
-            self.state, pref_vx, pref_vy, dynamic_neighbors, static_points
-        )
+            self.state, pref_vx, pref_vy, dynamic_neighbors, static_points,
+            goal=(target_x, target_y)
+            )
 
     def step(self, dt: float):
         # 1. Inverse Kinematics: Convert Twist to ideal wheel surface speeds
