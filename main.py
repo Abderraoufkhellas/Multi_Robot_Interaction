@@ -22,11 +22,8 @@ def main():
                 tx, ty = targets[robot.id]
                 robot.plan(tx, ty, dyn_neighbors, stat_points)
 
-            # Phase 2: Actuate Motors (Simultaneous kinematics update)
-            for robot in world.robots:
-                robot.step(world.dt)
-
-            world.time += world.dt
+            # Phase 2: Actuate, record collisions, advance time
+            world.step()
             logger.log_step(world, targets)
             visualizer.render(targets=targets)
     except KeyboardInterrupt:
