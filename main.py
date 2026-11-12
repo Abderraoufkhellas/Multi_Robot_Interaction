@@ -5,13 +5,12 @@ from src.utils.logger import MetricsLogger
 from src.utils.config_parser import setup_simulation
 
 def main():
-    scenario_file = "configs/scenario_01_cross.json"
+    scenario_file = "configs/scenario_02_three_mpc_cross.json"
     world, targets, sim_config = setup_simulation(scenario_file)
 
     visualizer = Visualizer(world, bounds=3.0)
     logger = MetricsLogger()
 
-    print(f"Starting simulation loaded from {scenario_file}...")
 
     interrupted = False
     try:
@@ -30,13 +29,13 @@ def main():
         interrupted = True
         print("Simulation interrupted.")
 
-    # Runs for normal finish, window close, q/Esc and Ctrl+C alike,
-    # so quitting early still saves the metrics collected so far.
+ 
+
     finished = world.time >= sim_config["max_time"]
     print("Simulation finished." if finished else "Simulation stopped early.")
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"logs/scenario_01_results_{timestamp}.csv"
+    filename = f"logs/scenario_02_three_mpc_cross_results_{timestamp}.csv"
     logger.export_to_csv(filename)
 
     # Keep the final frame open only if the sim ran to completion

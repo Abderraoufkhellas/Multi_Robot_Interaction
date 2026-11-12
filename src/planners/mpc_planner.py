@@ -12,8 +12,8 @@ class MpcPlanner(BasePlanner):
     def __init__(self, robot_id: int, dt: float = 0.1):# change later
         super().__init__(robot_id)
         
-        self.N = 60           
-        self.dt = 0.1                
+        self.N = 10           
+        self.dt = 0.2                
         
         self.predictor = NeighborPredictor(self.N, self.dt)
         
@@ -25,15 +25,17 @@ class MpcPlanner(BasePlanner):
         
         self.d_safe_dyn = (self.robot_radius)*2 + 0.1
         
-        self.max_static_obs = 10    
-        self.max_dyn_obs = 5        
+        self.max_static_obs = 1    
+        self.max_dyn_obs = 3       
         
-        self.Q_xy = 1.0            
+        self.Q_xy = 5.0            
         self.Q_theta = 0.1         
         self.R_v = 0.1              
         self.R_w = 0.1              
         self.S_v = 0.1              
-        self.S_w = 0.1              
+        self.S_w = 0.1
+        # Quadratic penalty on the squared-distance deficit for other robots.
+        self.slack_weight = 1.0e6
         
         self.u_prev = np.zeros((2, self.N))
         self._setup_casadi_opti()
@@ -42,7 +44,9 @@ class MpcPlanner(BasePlanner):
         self.opti = ca.Opti()
         
         self.X = self.opti.variable(3, self.N + 1)  
-        self.U = self.opti.variable(2, self.N)      
+        self.U = self.opti.variable(2, self.N)
+        # One slack per dynamic obstacle and horizon step. Static obstacles stay hard.
+        self.Slack = self.opti.variable(self.max_dyn_obs, self.N)
         
         self.P_start = self.opti.parameter(3)       
         self.P_ref = self.opti.parameter(2)         
@@ -71,11 +75,13 @@ class MpcPlanner(BasePlanner):
                 obs_y = self.P_obs_dyn[2 * i + 1, k]  
                 
                 dist_sq_dyn = (self.X[0, k+1] - obs_x)**2 + (self.X[1, k+1] - obs_y)**2
-                self.opti.subject_to(dist_sq_dyn >= self.d_safe_dyn**2)
+                self.opti.subject_to(self.Slack[i, k] >= 0)
+                self.opti.subject_to(dist_sq_dyn + self.Slack[i, k] >= self.d_safe_dyn**2)
+                cost += self.slack_weight * (self.Slack[i, k]**2)
             
             for i in range(self.max_static_obs):
                 dist_sq_static = (self.X[0, k+1] - self.P_obs_static[0, i])**2 + (self.X[1, k+1] - self.P_obs_static[1, i])**2
-                safe_dist = self.P_obs_static[2, i] + self.robot_radius + 0.15
+                safe_dist = self.P_obs_static[2, i] + self.robot_radius + 0.1
                 self.opti.subject_to(dist_sq_static >= safe_dist**2)
             
             cost += self.Q_xy * ((self.X[0, k+1] - self.P_ref[0])**2 + (self.X[1, k+1] - self.P_ref[1])**2)
@@ -88,7 +94,7 @@ class MpcPlanner(BasePlanner):
         self.opti.minimize(cost)
         
         p_opts = {"expand": True}
-        s_opts = {"max_iter": 100, "print_level": 0, "acceptable_tol": 1e-3, "acceptable_obj_change_tol": 1e-3}
+        s_opts = {"max_iter": 500, "print_level": 0, "acceptable_tol": 1e-2, "acceptable_obj_change_tol": 1e-3}
         self.opti.solver("ipopt", p_opts, s_opts)
 
     def compute_safe_velocity(self, current_state, pref_vx, pref_vy,
@@ -126,6 +132,7 @@ class MpcPlanner(BasePlanner):
             
         self.opti.set_value(self.P_obs_static, static_matrix)
         self.opti.set_initial(self.U, self.u_prev)
+        self.opti.set_initial(self.Slack, 0.0)
         
         try:
             sol = self.opti.solve()
