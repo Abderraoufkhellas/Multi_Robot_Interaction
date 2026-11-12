@@ -1,4 +1,4 @@
-from typing import List, Dict, Set, Optional, Tuple
+from typing import List, Set, Optional, Tuple
 from .robot import Robot
 from .state import Twist, Odometry
 import math
@@ -108,19 +108,16 @@ class World:
                     self.crashed_robots.add(r.id)
                     break # Skip checking other obstacles for this robot if it already crashed
 
-    def step(self, commands: Dict[int, Twist]):
-        
+    def step(self):
+        """Move every robot one tick, record new overlaps, then advance time.
+
+        Crashed robots are held in place. Each robot already stored its
+        command in ``robot.cmd`` during planning.
+        """
         for robot in self.robots:
-            
-            # FREEZE PENALTY: Intercept commands for crashed robots
             if robot.id in self.crashed_robots:
-                cmd = Twist(linear_x=0.0, angular_z=0.0)
-            else:
-                cmd = commands.get(robot.id, Twist(linear_x=0.0, angular_z=0.0))
-                
-            robot.step(cmd, self.dt)
-            
-        # Check for new overlaps after movement
+                robot.cmd = Twist(linear_x=0.0, angular_z=0.0)
+            robot.step(self.dt)
+
         self._check_collisions()
-            
         self.time += self.dt

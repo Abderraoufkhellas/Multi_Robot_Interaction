@@ -8,11 +8,11 @@ class OrcaPlanner(BasePlanner):
         super().__init__(robot_id)
         self.dt = dt
         self.max_speed = 1
-        self.radius = 0.14
+        self.radius = 0.17
         self.k_w = 3.0 
 
     def compute_safe_velocity(self, current_state: Odometry, pref_vx: float, pref_vy: float, 
-                              dynamic_neighbors: list, static_points: list) -> Twist:
+                              dynamic_neighbors: list, static_points: list,goal=None) -> Twist:
         
         sim = rvo2.PyRVOSimulator(self.dt, 5.0, 10, 4.0, 4.0, self.radius*1.5, self.max_speed)
 
